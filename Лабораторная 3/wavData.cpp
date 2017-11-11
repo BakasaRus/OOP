@@ -145,7 +145,7 @@ namespace Wav
 
 	bool WavData::IsHeaderCorrect(size_t fileSize) const
 	{
-		// Go to wav_header.h for details
+		// Go to wavHeader.h for details
 
 		if (header.chunkId[0] != 0x52 ||
 			header.chunkId[1] != 0x49 ||
@@ -190,7 +190,7 @@ namespace Wav
 		}
 
 		if (header.byteRate != header.sampleRate * header.numChannels * header.bitsPerSample / 8) {
-			throw HeaderBytesRateError();
+			throw HeaderByteRateError();
 			return false;
 		}
 
@@ -208,7 +208,7 @@ namespace Wav
 			return false;
 		}
 
-		if (header.subchunk2Size != fileSize - 44)
+		if (header.subchunk2Size != fileSize - headerSize)
 		{
 			throw HeaderSubchunk2SizeError();
 			return false;
@@ -230,7 +230,7 @@ namespace Wav
 			throw BadFormat();
 			return;
 		}
-		f.seekg(44);
+		f.seekg(headerSize);
 
 		int samplesPerChan = (header.subchunk2Size / sizeof(short)) / header.numChannels;
 
@@ -238,7 +238,7 @@ namespace Wav
 		std::vector<short> allChannels;
 		allChannels.resize(header.numChannels * samplesPerChan);
 		f.read((char*)allChannels.data(), header.subchunk2Size);
-		size_t readBytes = (int)f.tellg() - 44;
+		size_t readBytes = (int)f.tellg() - headerSize;
 		if (readBytes != header.subchunk2Size) {
 			printf("extract_data_int16() read only %zu of %u\n", readBytes, header.subchunk2Size);
 			throw IOError();
@@ -297,6 +297,36 @@ namespace Wav
 			throw IOError();
 			return;
 		}
+	}
+
+	void WavData::ChangeSampleRate(int rate)
+	{
+		if (header.numChannels < 1) {
+			throw BadParams();
+			return;
+		}
+
+		int samplesCountPerChan = (header.subchunk2Size / sizeof(short)) / header.numChannels;
+
+		// Verify that all channels have the same number of samples.
+		for (size_t ch = 0; ch < header.numChannels; ch++) {
+			if (data[ch].size() != (size_t)samplesCountPerChan) {
+				throw BadParams();
+				return;
+			}
+		}
+
+
+	}
+
+	void WavData::CutBegin(int sec)
+	{
+
+	}
+
+	void WavData::CutEnd(int sec)
+	{
+
 	}
 
 	unsigned short WavData::GetChanCount() const

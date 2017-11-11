@@ -1,10 +1,12 @@
 #pragma once
+#include <exception>
 
 namespace Wav
 {
 
 	class WavError : public std::exception
 	{	
+	public:
 		virtual const char* what() const throw()
 		{
 			return "Something bad happens with WAV file";
@@ -15,7 +17,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "Input/output error";
 		}
 	};
 
@@ -23,7 +25,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "File format is malformed";
 		}
 	};
 
@@ -31,7 +33,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "File format is unsupported";
 		}
 	};
 
@@ -39,7 +41,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "Parameters are malformed";
 		}
 	};
 
@@ -47,7 +49,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "Data size is bad";
 		}
 	};	
 

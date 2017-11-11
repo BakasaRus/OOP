@@ -8,7 +8,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "RIFF part is incorrect";
 		}
 	};
 
@@ -16,7 +16,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "Filesize in file and calculated filesize are different";
 		}
 	};
 
@@ -24,7 +24,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "WAVE part is incorrect";
 		}
 	};
 
@@ -32,7 +32,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "FMT part is incorrect";
 		}
 	};
 
@@ -40,7 +40,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "Files format except PCM are not supported";
 		}
 	};
 
@@ -48,15 +48,15 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "PCM format means that subchunk1 should contain 16 bytes";
 		}
 	};
 
-	class HeaderBytesRateError : public WavError
+	class HeaderByteRateError : public WavError
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "Byte rate in file and calculated byte rate are different";
 		}
 	};
 
@@ -64,7 +64,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "Block align in file and calculated block align are different";
 		}
 	};
 
@@ -72,7 +72,7 @@ namespace Wav
 	{
 		virtual const char* what() const throw()
 		{
-			return "Test error";
+			return "Raw data size in file and calculated raw data size are different";
 		}
 	};
 

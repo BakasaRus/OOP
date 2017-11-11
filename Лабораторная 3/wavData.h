@@ -14,36 +14,37 @@ namespace Wav
 	{
 	public:
 		WavData() = default;
-		WavData(std::string _filename);
-		void CreateFromFile(std::string _filename);
-		std::string GetDescription() const;
-		void ConvertStereoToMono();
-		void Save() const;
-		void SaveAs(std::string _filename) const;
+		WavData(std::string _filename) throw();
+		void CreateFromFile(std::string _filename) throw();
+		std::string GetDescription() const throw();
+		void ConvertStereoToMono() throw(BadParams);
+		void Save() const throw();
+		void SaveAs(std::string _filename) const throw(BadParams, IOError);
 
-		unsigned short GetChanCount() const;
-		unsigned short GetSampleRate() const;
-		unsigned short GetBitsPerSample() const;
-		bool IsStereo() const;
+		unsigned short GetChanCount() const throw();
+		unsigned short GetSampleRate() const throw();
+		unsigned short GetBitsPerSample() const throw();
+		bool IsStereo() const throw();
 
 
 		// Not necessary, but interesting to implement
 
-		void ApplyReverb(double delaySeconds, double decay);
-		/*
-		void ChangeSampleRate(int rate);
-		void CutBegin(int sec);
-		void CutEnd(int sec);
-		*/
+		void ApplyReverb(double delaySeconds, double decay) throw(BadParams);
+		void ChangeSampleRate(int rate) throw();
+		void CutBegin(int sec) throw();
+		void CutEnd(int sec) throw();
 
 	private:
 		std::string filename;
 		WavHeader header;
 		PcmData data;
+		const size_t headerSize = sizeof(WavHeader);
 
-		void ReadHeader();
-		bool IsHeaderCorrect(size_t fileSize) const;
-		void ReadData();
+		void ReadHeader() throw(BadFormat);
+		bool IsHeaderCorrect(size_t fileSize) const throw(HeaderRiffError, HeaderWaveError, HeaderFmtError, 
+														  HeaderNotPcm, HeaderSubchunk1Error, HeaderByteRateError, 
+														  HeaderBlockAlignError, HeaderSubchunk2SizeError);
+		void ReadData() throw(UnsupportedFormat, BadFormat, IOError);
 	};
 
 }
