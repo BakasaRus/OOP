@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -20,10 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{2FD2DB74-892C-4F68-AD80-1CD7779B9806}</ProjectGuid>
-    <RootNamespace>Лабораторная1</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
-    <ProjectName>Лабораторная 1</ProjectName>
+    <ProjectGuid>{9EFA668E-611A-4612-BA85-A819F2D900D0}</ProjectGuid>
+    <RootNamespace>Лабораторная4</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -112,12 +111,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="iniParser.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="primeFactors.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="exceptions.h" />
-    <ClInclude Include="iniParser.h" />
+    <ClInclude Include="primeFactors.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
