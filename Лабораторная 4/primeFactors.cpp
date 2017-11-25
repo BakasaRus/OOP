@@ -1,55 +1,81 @@
 ﻿#include "primeFactors.h"
 
-std::set<uint64_t> PrimeFactors::primeValues;
+std::vector<uint32_t> PrimeFactors::primeValues;
 
-PrimeFactors::PrimeFactors(uint64_t _value)
+PrimeFactors::PrimeFactors()
 {
-	SetValue(_value);
+	srand(time(NULL));
 	if (primeValues.empty())
 		InitPrimes();
 }
 
-void PrimeFactors::InitPrimes()
+PrimeFactors::PrimeFactors(std::string filename)
 {
-	// Эти значения используются для изначального отсева мелких делителей
-	// После этого мы будем 
+	srand(time(NULL));
+	if (primeValues.empty())
+		InitPrimes(filename);
+}
 
-	// Вместо решета Эратосфена будем использовать решето Аткина
-	// https://habrahabr.ru/post/133037/, если есть интерес
-	// https://ru.wikibooks.org/wiki/%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D0%B8_%D0%B0%D0%BB%D0%B3%D0%BE%D1%80%D0%B8%D1%82%D0%BC%D0%BE%D0%B2/%D0%A0%D0%B5%D1%88%D0%B5%D1%82%D0%BE_%D0%90%D1%82%D0%BA%D0%B8%D0%BD%D0%B0
+PrimeFactors::PrimeFactors(uint64_t _value, std::string filename)
+{
+	srand(time(NULL));
+	if (primeValues.empty())
+		InitPrimes(filename);
+	SetValue(_value);
+}
 
-	uint32_t limit = UINT32_MAX / 2048 + 1;
-	std::vector<bool> sieve(limit);
-	for (uint16_t x = 0; x * x < limit; ++x)
-		for (uint16_t y = 0; y * y < limit; ++y)
+void PrimeFactors::InitPrimes(std::string filename)
+{
+	/*
+		Эти значения используются для изначального отсева мелких делителей
+
+		Вместо решета Эратосфена будем использовать решето Аткина
+		https://habrahabr.ru/post/133037/, если есть интерес
+		https://ru.wikibooks.org/wiki/%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D0%B8_%D0%B0%D0%BB%D0%B3%D0%BE%D1%80%D0%B8%D1%82%D0%BC%D0%BE%D0%B2/%D0%A0%D0%B5%D1%88%D0%B5%D1%82%D0%BE_%D0%90%D1%82%D0%BA%D0%B8%D0%BD%D0%B0
+		
+		Если ВДРУГ указан файл с простыми числами, то просто радостно их считываем
+	*/
+	if (filename != "")
+	{
+		std::ifstream primes(filename);
+		uint32_t p;
+		while (primes >> p)
+			primeValues.push_back(p);
+		return;
+	}
+
+	std::vector<bool> sieve(genLimit);
+	for (uint16_t x = 0; x * x < genLimit; ++x)
+		for (uint16_t y = 0; y * y < genLimit; ++y)
 		{
-			uint32_t n1 = 4 * x * x + y * y;
-			uint32_t n2 = 3 * x * x + y * y;
-			uint32_t n3 = 3 * x * x - y * y;
-			if (n1 < limit && (n1 % 12 == 1 || n1 % 12 == 5))
+			uint64_t n1 = 4 * x * x + y * y;
+			uint64_t n2 = 3 * x * x + y * y;
+			uint64_t n3 = 3 * x * x - y * y;
+			if (n1 < genLimit && (n1 % 12 == 1 || n1 % 12 == 5))
 				sieve[n1].flip();
-			if (n2 < limit && n2 % 12 == 7)
+			if (n2 < genLimit && n2 % 12 == 7)
 				sieve[n2].flip();
-			if (n3 < limit && x > y && n3 % 12 == 11)
+			if (n3 < genLimit && x > y && n3 % 12 == 11)
 				sieve[n3].flip();
 		}
 
-	for (uint32_t i = 5, i2 = i * i; i2 < limit; ++i, i2 = i * i)
+	for (uint32_t i = 5, i2 = i * i; i2 < genLimit; ++i, i2 = i * i)
 		if (sieve[i])
-			for (uint32_t mi2 = i2; mi2 < limit; mi2 += i2)
+			for (uint32_t mi2 = i2; mi2 < genLimit; mi2 += i2)
 				sieve[mi2] = false;
 
 	sieve[2] = true;
 	sieve[3] = true;
 
-	for (uint64_t i = 2; i < limit; ++i)
+	for (uint64_t i = 2; i < genLimit; ++i)
 		if (sieve[i])
-			primeValues.insert(i);
+			primeValues.push_back(i);
 }
 
 void PrimeFactors::SetValue(uint64_t _value)
 {
 	value = _value;
+	factors.clear();
 	Factorize();
 }
 
@@ -89,70 +115,141 @@ std::string PrimeFactors::ToString() const
 	return result;
 }
 
-uint64_t PrimeFactors::GCD(uint64_t a, uint64_t b)
-{
-	while (b) {
-		a %= b;
-		uint64_t c = a;
-		a = b;
-		b = c;
+#pragma region Pollard Rho from SO (https://stackoverflow.com/questions/37083215/c-brent-pollard-rho-algorithm-infinite-loop)
+#define min(a,b) (a<b?a:b)
+#define abs(x,y) (x > y? x - y : y - x)
+
+uint64_t PrimeFactors::GCD(uint64_t m, uint64_t n) {
+	while (true) {
+		uint64_t r = m % n;
+		if (r == 0) {
+			return n;
+		}
+		m = n;
+		n = r;
 	}
-	return a;
+}
+uint64_t PrimeFactors::F(uint64_t y, uint64_t c, uint64_t n) {
+	y = (y * y) % n;
+	y += c;
+	if (y < c)
+		y += (std::numeric_limits<uint32_t>::max() - n) + 1;
+	y %= n;
+	return y;
 }
 
-uint64_t PrimeFactors::Pollard_Bent(uint64_t value, unsigned iterations_count)
+uint64_t PrimeFactors::Pollard_Rho(uint64_t n)
 {
-	uint64_t
-		b0 = rand() % value,
-		b1 = (b0*b0 + 2) % value,
-		a = b1;
-	for (unsigned iteration = 0, series_len = 1; 
-		iteration < iterations_count; 
-		iteration++, series_len *= 2)
+	if (n == 1) return n;
+	if (n % 2 == 0) return 2;
+
+	uint64_t y = rand() % n;
+	uint64_t x;
+	uint64_t ys = y;
+	uint64_t c;
+	do c = rand() % n; while (c == 0 || c == n - 2);
+	uint64_t m = 1000;
+	uint64_t d = 1;
+	uint64_t q = 1;
+	uint64_t r = 1;
+	do
 	{
-		uint64_t g = GCD(b1 - b0, value);
-		for (unsigned len = 0; len<series_len && (g == 1 && g == value); len++)
+		x = y;
+		for (uint64_t i = 0; i <= r; i++)
+			y = F(y, c, n);
+
+		uint64_t j = 0;
+		do
 		{
-			b1 = (b1*b1 + 2) % value;
-			g = GCD(abs((int)(b1 - b0)), value);
-		}
-		b0 = a;
-		a = b1;
-		if (g != 1 && g != value)
-			return g;
+			ys = y;
+			for (uint64_t i = 0; i <= min(m, r - j); i++)
+			{
+				y = F(y, c, n);
+				q *= (abs(x, y) % n);
+			}
+			d = GCD(q, n);
+			j += m;
+		} while (j < r && d == 1);
+		r *= 2;
+	} while (d == 1);
+	if (d == n)
+	{
+		do
+		{
+			ys = F(ys, c, n);
+			d = GCD(abs(x, ys), n);
+		} while (d == 1);
 	}
-	return 1;
+	return d;
 }
+#pragma endregion
+
+#pragma region Fermat Primality Test (https://habrahabr.ru/post/205318/)
+uint64_t PrimeFactors::Mul(uint64_t a, uint64_t b, uint64_t m) {
+	if (!(a * b))
+		return 0;
+	if (b == 1)
+		return a;
+	if (b % 2 == 0) {
+		uint64_t t = Mul(a, b / 2, m);
+		return (2 * t) % m;
+	}
+	return (Mul(a, b - 1, m) + a) % m;
+}
+
+uint64_t PrimeFactors::Pows(uint64_t a, uint64_t b, uint64_t m) {
+	if (b == 0)
+		return 1;
+	if (b % 2 == 0) {
+		uint64_t t = Pows(a, b / 2, m);
+		return Mul(t, t, m) % m;
+	}
+	return (Mul(Pows(a, b - 1, m), a, m)) % m;
+}
+
+bool PrimeFactors::IsPrime(uint64_t number)
+{
+	if (number == 2)
+		return true;
+	for (int i = 0; i < 100; i++) {
+		uint64_t a = ((rand() * rand()) % (number - 2)) + 2;
+		if (GCD(a, number) != 1)
+			return false;
+		if (Pows(a, number - 1, number) != 1)
+			return false;
+	}
+	return true;
+}
+
+#pragma endregion
 
 void PrimeFactors::Factorize()
 {
 	uint64_t temp = value;
-	/*
-	uint64_t curFactor = 2;
-	if (temp <= 3)
+	if (temp < 2)
 	{
-		factors[temp] = 1;
+		factors[temp]++;
 		return;
 	}
-	while (curFactor * curFactor <= value && temp != 1)
-	{
-		if (temp % curFactor != 0)
-			curFactor++;
-		else while (temp % curFactor == 0)
-		{
-			factors[curFactor]++;
-			temp /= curFactor;
-		}
-	}
-	*/
 	for (auto p : primeValues)
+	{
 		while (temp % p == 0)
 		{
 			factors[p]++;
 			temp /= p;
 		}
-	if (temp != 1)
-	{
-		factors[temp] = 1;
+		if (temp == 1)
+		{
+			return;
+		}
 	}
+	while (temp > 1 && !IsPrime(temp))
+	{
+		uint64_t a = 1;
+		for (int i = 0; i < 5 && (a == 1 || a == temp); ++i)
+			a = Pollard_Rho(temp);
+		factors[a]++;
+		temp /= a;
+	}
+	factors[temp]++;
 }

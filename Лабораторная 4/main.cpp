@@ -1,7 +1,6 @@
 #include "primeFactors.h"
 #include <iostream>
-#include <fstream>
-#include <cassert>
+#include <iomanip>
 
 int main(int argc, char* argv[])
 {
@@ -25,19 +24,14 @@ int main(int argc, char* argv[])
 		std::cerr << "Whoops, can't open file " << argv[2] << std::endl;
 		return 0;
 	}
-
 	uint64_t curValue;
+	PrimeFactors PF("primes.txt");
+
 	while (fin >> curValue)
 	{
 		std::clog << curValue << std::endl;
-		PrimeFactors PF(curValue);
-		fout << curValue << " = " << PF.ToString() << std::endl;
+		PF.SetValue(curValue);
+		fout << std::setw(20) << curValue << " = " << PF.ToString() << std::endl;
 	}
-
-	fout << std::endl;
-
-	for (auto p : PrimeFactors::primeValues)
-		fout << p << std::endl;
-
 	return 0;
 }

@@ -34,5 +34,8 @@
     <Text Include="output.txt">
       <Filter>Файлы ресурсов</Filter>
     </Text>
+    <Text Include="primes.txt">
+      <Filter>Файлы ресурсов</Filter>
+    </Text>
   </ItemGroup>
 </Project>
