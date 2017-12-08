@@ -33,22 +33,22 @@ public:
 	IniParser(std::string fileName);
 
 	// Dump file from disk (with comments, empty lines etc.) just to debug our class
-	void PrintFile() const;
+	void PrintFile() const throw(FileNotFound);
 
 	// Parser which reads INI file into memory
-	void Parse();
+	void Parse() throw(FileNotFound, DummyContent);
 
 	// Dump our INI file from memory (only with sections and key-value pairs)
-	void Dump(std::ostream &output = std::cout) const;
+	void Dump(std::ostream &output = std::cout) const throw();
 
 	// Destructor. Pretty self-descripting
 	~IniParser() = default;
 
 	// Getter
 	template <class T>
-	T GetValue(std::string section, std::string key) const;
+	T GetValue(std::string section, std::string key) const throw(ParameterNotFound, BadIniCast);
 
 	// Setter
 	template <class T>
-	void SetValue(std::string section, std::string key, T value);
+	void SetValue(std::string section, std::string key, T value) throw();
 };

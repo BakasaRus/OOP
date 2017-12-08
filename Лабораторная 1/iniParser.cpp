@@ -6,7 +6,7 @@ IniParser::IniParser(std::string fileName)
 	Parse();
 }
 
-void IniParser::PrintFile() const
+void IniParser::PrintFile() const throw(FileNotFound)
 {
 	if (fileName == "")
 	{
@@ -26,7 +26,7 @@ void IniParser::PrintFile() const
 	}
 }
 
-void IniParser::Parse()
+void IniParser::Parse() throw(FileNotFound, DummyContent)
 {
 	std::ifstream file(fileName);
 	if (!file.is_open())
@@ -64,7 +64,7 @@ void IniParser::Parse()
 	}
 }
 
-void IniParser::Dump(std::ostream &output) const
+void IniParser::Dump(std::ostream &output) const throw()
 {
 	for each (auto section in data)
 	{
@@ -78,7 +78,7 @@ void IniParser::Dump(std::ostream &output) const
 }
 
 template <>
-int IniParser::GetValue<int>(std::string section, std::string key) const
+int IniParser::GetValue<int>(std::string section, std::string key) const throw(ParameterNotFound, BadIniCast)
 {
 	try
 	{
@@ -95,7 +95,7 @@ int IniParser::GetValue<int>(std::string section, std::string key) const
 }
 
 template <>
-double IniParser::GetValue<double>(std::string section, std::string key) const
+double IniParser::GetValue<double>(std::string section, std::string key) const throw(ParameterNotFound, BadIniCast)
 {
 	try
 	{
@@ -112,7 +112,7 @@ double IniParser::GetValue<double>(std::string section, std::string key) const
 }
 
 template <>
-std::string IniParser::GetValue<std::string>(std::string section, std::string key) const
+std::string IniParser::GetValue<std::string>(std::string section, std::string key) const throw(ParameterNotFound, BadIniCast)
 {
 	try
 	{
@@ -125,19 +125,19 @@ std::string IniParser::GetValue<std::string>(std::string section, std::string ke
 }
 
 template <>
-void IniParser::SetValue<int>(std::string section, std::string key, int Value)
+void IniParser::SetValue<int>(std::string section, std::string key, int Value) throw()
 {
 	data[section][key] = std::to_string(Value);
 }
 
 template <>
-void IniParser::SetValue<double>(std::string section, std::string key, double value)
+void IniParser::SetValue<double>(std::string section, std::string key, double value) throw()
 {
 	data[section][key] = std::to_string(value);
 }
 
 template <>
-void IniParser::SetValue<std::string>(std::string section, std::string key, std::string value)
+void IniParser::SetValue<std::string>(std::string section, std::string key, std::string value) throw()
 {
 	data[section][key] = value;
 }
