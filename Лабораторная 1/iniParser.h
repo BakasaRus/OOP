@@ -5,32 +5,31 @@
 #include <unordered_map>
 #include <string>
 #include <regex>
-
-using namespace std;
+#include "exceptions.h"
 
 class IniParser
 {
 	// If you have a better way to create multidimensional associative arrays, just let me know about it
-	unordered_map<string, unordered_map<string, string>> Data;
+	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> Data;
 
 	// INI filename
-	string FileName;
+	std::string FileName;
 
 	// Regex detecting a comment line
-	const string CommentRegEx = R"(^(\s*(;|#).*)?$)";
+	const std::string CommentRegEx = R"(^(\s*(;|#).*)?$)";
 
 	// Regex detecting a section line
-	const string SectionRegEx = R"(^(\[([a-zA-Z_0-9]*)\]){1}\s*((;|#).*)?$)";
+	const std::string SectionRegEx = R"(^(\[([a-zA-Z_0-9]*)\]){1}\s*((;|#).*)?$)";
 
 	// Regex detecting a key-value line
-	const string KeyValueRegEx = R"(^([a-zA-Z_0-9]+){1}\s*=\s*([/a-zA-Z_0-9\.\-]+){1}\s*((;|#).*)?$)";
+	const std::string KeyValueRegEx = R"(^([a-zA-Z_0-9]+){1}\s*=\s*([/a-zA-Z_0-9\.\-]+){1}\s*((;|#).*)?$)";
 
 public:
 	// Default constructor which creates a brand new INI file in memory
-	IniParser();
+	IniParser() = default;
 
 	// Constructor which reads content from specified INI file
-	IniParser(string FileName);
+	IniParser(std::string FileName);
 
 	// Dump file from disk (with comments, empty lines etc.) just to debug our class
 	void PrintFile() const;
@@ -39,30 +38,30 @@ public:
 	void Parse();
 
 	// Dump our INI file from memory (only with sections and key-value pairs)
-	void Dump(ostream &Output = cout) const;
+	void Dump(std::ostream &Output = std::cout) const;
 
 	// Destructor. Pretty self-descripting
-	~IniParser();
+	~IniParser() = default;
 
 
 
 	// Getter for integer values
-	int GetInt(string Section, string Key) const;
+	int GetInt(std::string Section, std::string Key) const;
 
 	// Getter for double values
-	double GetDouble(string Section, string Key) const;
+	double GetDouble(std::string Section, std::string Key) const;
 
 	// Getter for string values
-	string GetString(string Section, string Key) const;
+	std::string GetString(std::string Section, std::string Key) const;
 
 
 
 	// Setter for integer values
-	void SetInt(string Section, string Key, int Value);
+	void SetInt(std::string Section, std::string Key, int Value);
 
 	// Setter for double values
-	void SetDouble(string Section, string Key, double Value);
+	void SetDouble(std::string Section, std::string Key, double Value);
 
 	// Setter for string values
-	void SetString(string Section, string Key, string Value);
+	void SetString(std::string Section, std::string Key, std::string Value);
 };

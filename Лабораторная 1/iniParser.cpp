@@ -1,12 +1,6 @@
 #include "iniParser.h"
-#include "exceptions.h"
 
-IniParser::IniParser()
-{
-
-}
-
-IniParser::IniParser(string FileName)
+IniParser::IniParser(std::string FileName)
 {
 	this->FileName = FileName;
 	Parse();
@@ -18,45 +12,45 @@ void IniParser::PrintFile() const
 	{
 		return;
 	}
-	ifstream File(FileName);
+	std::ifstream File(FileName);
 	if (!File.is_open())
 	{
 		throw FileNotFound();
 		return;
 	}
-	string Temp;
+	std::string Temp;
 	while (!File.eof())
 	{
 		getline(File, Temp);
-		cout << Temp << endl;
+		std::cout << Temp << std::endl;
 	}
 }
 
 void IniParser::Parse()
 {
-	ifstream File(FileName);
+	std::ifstream File(FileName);
 	if (!File.is_open())
 	{
 		throw FileNotFound();
 		return;
 	}
-	string Temp;
-	string CurrentSection;
-	regex Section(SectionRegEx);
-	regex KeyValue(KeyValueRegEx);
-	regex Comment(CommentRegEx);
-	smatch Matches;
+	std::string Temp;
+	std::string CurrentSection;
+	std::regex Section(SectionRegEx);
+	std::regex KeyValue(KeyValueRegEx);
+	std::regex Comment(CommentRegEx);
+	std::smatch Matches;
 	while (getline(File, Temp))
 	{
 		if (regex_match(Temp, Matches, Section))
 		{
 			CurrentSection = Matches[2];
-			Data.insert(pair<string, unordered_map<string, string>>(CurrentSection, {}));
+			Data.insert(std::pair<std::string, std::unordered_map<std::string, std::string>>(CurrentSection, {}));
 		}
 		else if (regex_match(Temp, Matches, KeyValue))
 		{
-			string Key = Matches[1], Value = Matches[2];
-			Data[CurrentSection].insert(pair<string, string>(Key, Value));
+			std::string Key = Matches[1], Value = Matches[2];
+			Data[CurrentSection].insert(std::pair<std::string, std::string>(Key, Value));
 		}
 		else if (regex_match(Temp, Comment))
 		{
@@ -70,11 +64,11 @@ void IniParser::Parse()
 	}
 }
 
-void IniParser::Dump(ostream &Output) const
+void IniParser::Dump(std::ostream &Output) const
 {
 	for each (auto Section in Data)
 	{
-		Output << "[" << Section.first << "]" << endl;
+		Output << "[" << Section.first << "]" << std::endl;
 		for each (auto Parameter in Section.second)
 		{
 			Output << Parameter.first << " = " << Parameter.second << endl;
@@ -83,7 +77,7 @@ void IniParser::Dump(ostream &Output) const
 	}
 }
 
-int IniParser::GetInt(string Section, string Key) const
+int IniParser::GetInt(std::string Section, std::string Key) const
 {
 	try
 	{
@@ -99,7 +93,7 @@ int IniParser::GetInt(string Section, string Key) const
 	}
 }
 
-double IniParser::GetDouble(string Section, string Key) const
+double IniParser::GetDouble(std::string Section, std::string Key) const
 {
 	try
 	{
@@ -115,7 +109,7 @@ double IniParser::GetDouble(string Section, string Key) const
 	}
 }
 
-string IniParser::GetString(string Section, string Key) const
+std::string IniParser::GetString(std::string Section, std::string Key) const
 {
 	try
 	{
@@ -127,22 +121,17 @@ string IniParser::GetString(string Section, string Key) const
 	}
 }
 
-void IniParser::SetInt(string Section, string Key, int Value)
+void IniParser::SetInt(std::string Section, std::string Key, int Value)
 {
 	Data[Section][Key] = std::to_string(Value);
 }
 
-void IniParser::SetDouble(string Section, string Key, double Value)
+void IniParser::SetDouble(std::string Section, std::string Key, double Value)
 {
 	Data[Section][Key] = std::to_string(Value);
 }
 
-void IniParser::SetString(string Section, string Key, string Value)
+void IniParser::SetString(std::string Section, std::string Key, std::string Value)
 {
 	Data[Section][Key] = Value;
-}
-
-IniParser::~IniParser()
-{
-
 }
