@@ -71,9 +71,9 @@ void IniParser::Dump(std::ostream &Output) const
 		Output << "[" << Section.first << "]" << std::endl;
 		for each (auto Parameter in Section.second)
 		{
-			Output << Parameter.first << " = " << Parameter.second << endl;
+			Output << Parameter.first << " = " << Parameter.second << std::endl;
 		}
-		Output << endl;
+		Output << std::endl;
 	}
 }
 
