@@ -219,6 +219,10 @@ void StatisticMultiset<T>::AddNum(It begin, It end) throw()
 template<class T>
 void StatisticMultiset<T>::AddNums(const StatisticMultiset& a_stat_set) throw()
 {
+	if (source.begin() == a_stat_set.source.begin())
+	{
+		return;
+	}
 	for (T value : a_stat_set.source)
 	{
 		source.insert(value);

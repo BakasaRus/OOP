@@ -6,7 +6,12 @@ int main()
 	std::ofstream result("result.txt");
 
 	StatisticMultiset<int> SMS{46, 71, 90, -32};
+	SMS.Dump(result);
 	SMS.SetCaching(false);
+
+	SMS.AddNums(SMS);
+	SMS.Dump(result);
+	return 0;
 
 	std::list<int> List{89, 55, 0, 43, 22, -90, 1};
 	SMS.AddNum(List.begin(), List.end());

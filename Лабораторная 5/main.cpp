@@ -2,7 +2,6 @@
 #include <iostream>
 #include <iomanip>
 #include <thread>
-#include <windows.h>
 
 bool stop = false;
 
