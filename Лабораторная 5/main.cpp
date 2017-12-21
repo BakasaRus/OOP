@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 	uint64_t curValue;
 	PrimeFactors PF("primes.txt");
 
-	ThreadPool<std::string, uint64_t> tPool(10);
+	ThreadPool<std::string> tPool(10);
 
 	while (fin >> curValue)
 	{
@@ -48,6 +48,17 @@ int main(int argc, char* argv[])
 			fout.flush();
 		}
 	}
+	tPool.Pause();
+	fout << "PAUSED" << std::endl;
+	fout.flush();
+	while (tPool.CanGetResult())
+	{
+		fout << tPool.GetNextResult() << std::endl;
+		fout.flush();
+	}
+	tPool.Continue();
+	fout << "CONTINUED" << std::endl;
+	fout.flush();
 	tPool.Wait();
 	while (tPool.CanGetResult())
 	{

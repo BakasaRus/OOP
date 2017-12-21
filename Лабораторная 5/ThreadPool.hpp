@@ -6,7 +6,7 @@
 
 enum TPoolState { Executing, Paused, Stopped };
 
-template<class R, class... Args>
+template<class R>
 class ThreadPool
 {
 public:
@@ -22,99 +22,120 @@ public:
 	bool IsAvailable();
 	bool CanGetResult();
 	R GetNextResult();
-	;void Wait();
+	void Wait();
+	uint64_t CompletedTasksCount();
 
 private:
 	/* We assume that our thread pool will do similar tasks */
 	std::queue<Task> tasks;
-	std::vector<std::future<R>> workers;
-	std::future<void> controller;
+	std::vector<std::future<void>> workers;
 	std::queue<R> results;
 	TPoolState state;
 	const size_t tasksPerWorker = 5;
-	std::mutex resultMutex;
+	std::mutex resultMutex, tasksMutex;
+	uint64_t tasksCompleted = 0;
+
 	void Execute();
 	bool IsWorkerReady(size_t);
 };
 
-template<class R, class... Args>
-ThreadPool<R, Args...>::ThreadPool(size_t workersCount)
+template<class R>
+ThreadPool<R>::ThreadPool(size_t workersCount)
 {
 	workers.resize(workersCount);
 	state = Executing;
-	controller = std::async(std::launch::async, &ThreadPool::Execute, this);
+	for (size_t i = 0; i < workersCount; ++i)
+	{
+		workers[i] = std::async(std::launch::async, &ThreadPool::Execute, this);
+	}
 }
 
-template<class R, class... Args>
-void ThreadPool<R, Args...>::Execute()
+template<class R>
+void ThreadPool<R>::Execute()
 {
 	while (state != Stopped)
 	{
-		for (uint32_t i = 0; i < workers.size(); ++i)
+		while (state == Executing)
 		{
-			if (!workers[i].valid() && !tasks.empty())
+			Task curTask;
 			{
-				workers[i] = std::async(std::launch::async, tasks.front());
+				std::lock_guard<std::mutex> lg(tasksMutex);
+				if (tasks.empty())
+				{
+					continue;
+				}
+				curTask = tasks.front();
 				tasks.pop();
 			}
-			else if (IsWorkerReady(i))
+			R res = curTask();
 			{
 				std::lock_guard<std::mutex> lg(resultMutex);
-				results.push(workers[i].get());
+				results.push(res);
+				++tasksCompleted;
 			}
 		}
 	}
 }
 
-template<class R, class... Args>
-bool ThreadPool<R, Args...>::IsWorkerReady(size_t i)
+template<class R>
+bool ThreadPool<R>::IsWorkerReady(size_t i)
 {
 	return workers[i].valid() && workers[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
 
-template<class R, class... Args>
-ThreadPool<R, Args...>::~ThreadPool()
+template<class R>
+ThreadPool<R>::~ThreadPool()
 {
-	state = Stopped;
-	if (controller.valid())
-	{
-		controller.wait();
-		controller.get();
-	}
+	Stop();
 }
 
-template<class R, class... Args>
-void ThreadPool<R, Args...>::AddTask(Task task)
+template<class R>
+void ThreadPool<R>::AddTask(Task task)
 {
 	tasks.push(task);
 }
 
-template<class R, class... Args>
-void ThreadPool<R, Args...>::Stop()
+template<class R>
+void ThreadPool<R>::Stop()
 {
 	state = Stopped;
+	for (size_t i = 0; i < workers.size(); ++i)
+	{
+		if (!workers[i].valid())
+		{
+			continue;
+		}
+		workers[i].wait();
+		workers[i].get();
+	}
 }
 
-template<class R, class... Args>
-void ThreadPool<R, Args...>::Pause()
+template<class R>
+void ThreadPool<R>::Pause()
 {
-	state = Paused;
+	if (state != Stopped)
+	{
+		state = Paused;
+	}
 }
 
-template<class R, class... Args>
-void ThreadPool<R, Args...>::Continue()
+template<class R>
+void ThreadPool<R>::Continue()
 {
-	state = Executing;
+	if (state != Stopped)
+	{
+		state = Executing;
+	}
 }
 
-template<class R, class... Args>
-bool ThreadPool<R, Args...>::IsAvailable()
+template<class R>
+bool ThreadPool<R>::IsAvailable()
 {
 	return (tasks.size() < workers.size() * tasksPerWorker);
 }
 
-template<class R, class... Args>
-R ThreadPool<R, Args...>::GetNextResult()
+template<class R>
+R ThreadPool<R>::GetNextResult()
 {
 	std::lock_guard<std::mutex> lg(resultMutex);
 	R res = results.front();
@@ -122,23 +143,20 @@ R ThreadPool<R, Args...>::GetNextResult()
 	return res;
 }
 
-template<class R, class... Args>
-bool ThreadPool<R, Args...>::CanGetResult()
+template<class R>
+bool ThreadPool<R>::CanGetResult()
 {
 	return !(results.empty());
 }
 
-template<class R, class... Args>
-void ThreadPool<R, Args...>::Wait()
+template<class R>
+void ThreadPool<R>::Wait()
 {
-	while (true)
-	{
-		bool tasksAreComplete = tasks.empty();
-		for (size_t i = 0; i < workers.size() && tasksAreComplete; ++i)
-		{
-			if (workers[i].valid())
-				tasksAreComplete = false;
-		}
-		if (tasksAreComplete) break;
-	}
+	while (!tasks.empty());
+}
+
+template<class R>
+void ThreadPool<R>::CompletedTasksCount()
+{
+	while tasksCompleted;
 }
