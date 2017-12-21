@@ -96,23 +96,25 @@ bool PrimeFactors::IsCorrect() const
 
 std::string PrimeFactors::ToString() const
 {
-	std::string result;
 	bool isFirst = true;
+	std::stringstream ss;
+
+	ss << std::setw(20) << value << " = ";
 
 	for (auto pair : factors)
 	{
 		if (isFirst)
 			isFirst = false;
 		else
-			result += " * ";
+			ss << " * ";
 
 		if (pair.second == 1)
-			result += std::to_string(pair.first);
+			ss << pair.first;
 		else
-			result += std::to_string(pair.first) + "^" + std::to_string(pair.second);
+			ss << pair.first << "^" << pair.second;
 	}
 
-	return result;
+	return ss.str();
 }
 
 #pragma region Pollard Rho from SO (https://stackoverflow.com/questions/37083215/c-brent-pollard-rho-algorithm-infinite-loop)

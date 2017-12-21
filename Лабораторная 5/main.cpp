@@ -1,26 +1,10 @@
 #include "primeFactors.h"
 #include <iostream>
-#include <iomanip>
-#include <thread>
+#include "ThreadPool.hpp"
 
-bool stop = false;
-
-uint64_t Compute(std::ifstream& fin, std::ofstream& fout)
+std::string Compute(uint64_t value)
 {
-	uint64_t count = 0;
-	uint64_t curValue;
-	PrimeFactors PF("primes.txt");
-
-	while (fin >> curValue)
-	{
-		std::clog << curValue << std::endl;
-		PF.SetValue(curValue);
-		fout << std::setw(20) << curValue << " = " << PF.ToString() << std::endl;
-		++count;
-		if (stop) break;
-	}
-	return count;
-
+	return PrimeFactors(value).ToString();
 }
 
 int main(int argc, char* argv[])
@@ -45,16 +29,30 @@ int main(int argc, char* argv[])
 		std::cerr << "Whoops, can't open file " << argv[2] << std::endl;
 		return 0;
 	}
-	std::thread th(Compute, std::ref(fin), std::ref(fout));
-	std::string command;
-	while (th.joinable() && std::cin >> command)
+	
+	uint64_t curValue;
+	PrimeFactors PF("primes.txt");
+
+	ThreadPool<std::string, uint64_t> tPool(10);
+
+	while (fin >> curValue)
 	{
-		if (command == "exit")
+		while (!tPool.IsAvailable())
 		{
-			stop = true;
-			break;
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+		tPool.AddTask(std::bind(Compute, curValue));
+		while (tPool.CanGetResult())
+		{
+			fout << tPool.GetNextResult() << std::endl;
+			fout.flush();
 		}
 	}
-	th.join();
+	tPool.Wait();
+	while (tPool.CanGetResult())
+	{
+		fout << tPool.GetNextResult() << std::endl;
+		fout.flush();
+	}
 	return 0;
 }

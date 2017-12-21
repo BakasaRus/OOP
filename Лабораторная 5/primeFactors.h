@@ -4,6 +4,8 @@
 #include <string>
 #include <ctime>
 #include <fstream>
+#include <sstream>
+#include <iomanip>
 
 class PrimeFactors
 {
