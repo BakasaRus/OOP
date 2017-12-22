@@ -10,12 +10,14 @@ template<class R>
 class ThreadPool
 {
 public:
+	ThreadPool() = default;
 	ThreadPool(size_t);
 	~ThreadPool();
 
 	typedef std::function<R()> Task;
 
 	void AddTask(Task);
+	void Start(size_t);
 	void Pause();
 	void Continue();
 	void Stop();
@@ -41,6 +43,12 @@ private:
 
 template<class R>
 ThreadPool<R>::ThreadPool(size_t workersCount)
+{
+	Start(workersCount);
+}
+
+template<class R>
+void ThreadPool<R>::Start(size_t workersCount)
 {
 	workers.resize(workersCount);
 	state = Executing;
@@ -156,7 +164,7 @@ void ThreadPool<R>::Wait()
 }
 
 template<class R>
-void ThreadPool<R>::CompletedTasksCount()
+uint64_t ThreadPool<R>::CompletedTasksCount()
 {
-	while tasksCompleted;
+	return tasksCompleted;
 }

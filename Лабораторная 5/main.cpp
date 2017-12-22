@@ -2,9 +2,9 @@
 #include <iostream>
 #include "ThreadPool.hpp"
 
-std::string Compute(uint64_t value)
+void AsyncReading()
 {
-	return PrimeFactors(value).ToString();
+
 }
 
 int main(int argc, char* argv[])
@@ -20,50 +20,69 @@ int main(int argc, char* argv[])
 
 	if (!fin.is_open())
 	{
-		std::cerr << "Whoops, can't open file " << argv[1] << std::endl;
+		std::cerr << "Whoops, can't open input file " << argv[1] << std::endl;
 		return 0;
 	}
 
 	if (!fout.is_open())
 	{
-		std::cerr << "Whoops, can't open file " << argv[2] << std::endl;
+		std::cerr << "Whoops, can't open output file " << argv[2] << std::endl;
 		return 0;
 	}
+
+	size_t tPoolSize;
+
+	std::cout << "Set number of threads in pool: ";
+	std::cin >> tPoolSize;
+
+	ThreadPool<std::string> tPool;
 	
-	uint64_t curValue;
-	PrimeFactors PF("primes.txt");
-
-	ThreadPool<std::string> tPool(10);
-
-	while (fin >> curValue)
-	{
-		while (!tPool.IsAvailable())
+	std::future<void> computing = std::async(std::launch::async, [&]() {
+		uint64_t curValue;
+		PrimeFactors PF("primes.txt");
+		tPool.Start(tPoolSize);
+		while (fin >> curValue)
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			while (!tPool.IsAvailable())
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+
+			tPool.AddTask([&]() {
+				return PrimeFactors(curValue).ToString();
+			});
+
+			while (tPool.CanGetResult())
+			{
+				fout << tPool.GetNextResult() << std::endl;
+			}
 		}
-		tPool.AddTask(std::bind(Compute, curValue));
+		tPool.Wait();
 		while (tPool.CanGetResult())
 		{
 			fout << tPool.GetNextResult() << std::endl;
-			fout.flush();
+		}
+	});
+
+	std::string command;
+	while (std::cin >> command)
+	{
+		if (command == "exit")
+		{
+			tPool.Stop();
+			break;
+		}
+		if (command == "pause")
+		{
+			tPool.Pause();
+			fout.close();
+		}
+		if (command == "resume")
+		{
+			tPool.Continue();
+			fout.open(argv[2], std::ofstream::app);
 		}
 	}
-	tPool.Pause();
-	fout << "PAUSED" << std::endl;
-	fout.flush();
-	while (tPool.CanGetResult())
-	{
-		fout << tPool.GetNextResult() << std::endl;
-		fout.flush();
-	}
-	tPool.Continue();
-	fout << "CONTINUED" << std::endl;
-	fout.flush();
-	tPool.Wait();
-	while (tPool.CanGetResult())
-	{
-		fout << tPool.GetNextResult() << std::endl;
-		fout.flush();
-	}
+
 	return 0;
 }
