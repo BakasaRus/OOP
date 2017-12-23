@@ -16,16 +16,16 @@ public:
 
 	typedef std::function<R()> Task;
 
-	void AddTask(Task) throw();
-	void Start(size_t) throw();
-	void Pause() throw();
-	void Continue() throw();
-	void Stop() throw();
-	bool IsAvailable() const throw();
-	bool CanGetResult() const throw();
-	R GetNextResult() throw();
-	void Wait() const throw();
-	uint64_t CompletedTasksCount() const throw();
+	void AddTask(Task);
+	void Start(size_t);
+	void Pause();
+	void Continue();
+	void Stop();
+	bool IsAvailable();
+	bool CanGetResult();
+	R GetNextResult();
+	void Wait();
+	uint64_t CompletedTasksCount();
 
 private:
 	/* We assume that our thread pool will do similar tasks */
@@ -37,7 +37,8 @@ private:
 	std::mutex resultMutex, tasksMutex;
 	uint64_t tasksCompleted = 0;
 
-	void Execute() throw();
+	void Execute();
+	bool IsWorkerReady(size_t);
 };
 
 template<class R>
@@ -58,7 +59,7 @@ void ThreadPool<R>::Start(size_t workersCount)
 }
 
 template<class R>
-void ThreadPool<R>::Execute() throw()
+void ThreadPool<R>::Execute()
 {
 	while (state != Stopped)
 	{
@@ -85,19 +86,25 @@ void ThreadPool<R>::Execute() throw()
 }
 
 template<class R>
+bool ThreadPool<R>::IsWorkerReady(size_t i)
+{
+	return workers[i].valid() && workers[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+}
+
+template<class R>
 ThreadPool<R>::~ThreadPool()
 {
 	Stop();
 }
 
 template<class R>
-void ThreadPool<R>::AddTask(Task task) throw()
+void ThreadPool<R>::AddTask(Task task)
 {
 	tasks.push(task);
 }
 
 template<class R>
-void ThreadPool<R>::Stop() throw()
+void ThreadPool<R>::Stop()
 {
 	state = Stopped;
 	for (size_t i = 0; i < workers.size(); ++i)
@@ -112,7 +119,7 @@ void ThreadPool<R>::Stop() throw()
 }
 
 template<class R>
-void ThreadPool<R>::Pause() throw()
+void ThreadPool<R>::Pause()
 {
 	if (state != Stopped)
 	{
@@ -121,7 +128,7 @@ void ThreadPool<R>::Pause() throw()
 }
 
 template<class R>
-void ThreadPool<R>::Continue() throw()
+void ThreadPool<R>::Continue()
 {
 	if (state != Stopped)
 	{
@@ -130,7 +137,7 @@ void ThreadPool<R>::Continue() throw()
 }
 
 template<class R>
-bool ThreadPool<R>::IsAvailable() const throw()
+bool ThreadPool<R>::IsAvailable()
 {
 	return (tasks.size() < workers.size() * tasksPerWorker);
 }
@@ -145,19 +152,19 @@ R ThreadPool<R>::GetNextResult()
 }
 
 template<class R>
-bool ThreadPool<R>::CanGetResult() const throw()
+bool ThreadPool<R>::CanGetResult()
 {
 	return !(results.empty());
 }
 
 template<class R>
-void ThreadPool<R>::Wait() const throw()
+void ThreadPool<R>::Wait()
 {
 	while (!tasks.empty());
 }
 
 template<class R>
-uint64_t ThreadPool<R>::CompletedTasksCount() const throw()
+uint64_t ThreadPool<R>::CompletedTasksCount()
 {
 	return tasksCompleted;
 }

@@ -2,6 +2,11 @@
 #include <iostream>
 #include "ThreadPool.hpp"
 
+void AsyncReading()
+{
+
+}
+
 int main(int argc, char* argv[])
 {
 	if (argc < 2)
