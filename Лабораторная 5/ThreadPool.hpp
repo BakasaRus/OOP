@@ -28,7 +28,6 @@ public:
 	uint64_t CompletedTasksCount() const throw();
 
 private:
-	/* We assume that our thread pool will do similar tasks */
 	std::queue<Task> tasks;
 	std::vector<std::future<void>> workers;
 	std::queue<R> results;
@@ -36,8 +35,6 @@ private:
 	const size_t tasksPerWorker = 5;
 	std::mutex resultMutex, tasksMutex;
 	uint64_t tasksCompleted = 0;
-
-	void Execute() throw();
 };
 
 template<class R>
@@ -53,46 +50,50 @@ void ThreadPool<R>::Start(size_t workersCount)
 	state = Executing;
 	for (size_t i = 0; i < workersCount; ++i)
 	{
-		workers[i] = std::async(std::launch::async, &ThreadPool::Execute, this);
-	}
-}
-
-template<class R>
-void ThreadPool<R>::Execute() throw()
-{
-	while (state != Stopped)
-	{
-		while (state == Executing)
+		workers[i] = std::async(std::launch::async, [&]() 
 		{
-			Task curTask;
+			while (state != Stopped)
 			{
-				std::lock_guard<std::mutex> lg(tasksMutex);
-				if (tasks.empty())
+				while (state == Executing)
 				{
-					continue;
+					Task curTask;
+					{
+						std::lock_guard<std::mutex> lg(tasksMutex);
+						if (!tasks.empty())
+						{
+							curTask = tasks.front();
+							tasks.pop();
+						}
+						else
+						{
+							continue;
+						}
+					}
+					R res = curTask();
+					{
+						std::lock_guard<std::mutex> lg2(resultMutex);
+						results.push(res);
+						++tasksCompleted;
+					}
 				}
-				curTask = tasks.front();
-				tasks.pop();
 			}
-			R res = curTask();
-			{
-				std::lock_guard<std::mutex> lg(resultMutex);
-				results.push(res);
-				++tasksCompleted;
-			}
-		}
+		});
 	}
 }
 
 template<class R>
 ThreadPool<R>::~ThreadPool()
 {
-	Stop();
+	if (state != Stopped)
+	{
+		Stop();
+	}
 }
 
 template<class R>
 void ThreadPool<R>::AddTask(Task task) throw()
 {
+	std::lock_guard<std::mutex> lg(tasksMutex);
 	tasks.push(task);
 }
 
