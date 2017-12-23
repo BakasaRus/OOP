@@ -1,7 +1,8 @@
 #pragma once
 #include <queue>
 #include <vector>
-#include <future>
+#include <thread>
+#include <mutex>
 #include <chrono>
 
 enum TPoolState { Executing, Paused, Stopped };
@@ -29,7 +30,7 @@ public:
 
 private:
 	std::queue<Task> tasks;
-	std::vector<std::future<void>> workers;
+	std::vector<std::thread> workers;
 	std::queue<R> results;
 	TPoolState state;
 	const size_t tasksPerWorker = 5;
@@ -50,7 +51,7 @@ void ThreadPool<R>::Start(size_t workersCount)
 	state = Executing;
 	for (size_t i = 0; i < workersCount; ++i)
 	{
-		workers[i] = std::async(std::launch::async, [&]() 
+		workers[i] = std::thread([&]() 
 		{
 			while (state != Stopped)
 			{
@@ -103,12 +104,11 @@ void ThreadPool<R>::Stop() throw()
 	state = Stopped;
 	for (size_t i = 0; i < workers.size(); ++i)
 	{
-		if (!workers[i].valid())
+		if (!workers[i].joinable())
 		{
 			continue;
 		}
-		workers[i].wait();
-		workers[i].get();
+		workers[i].join();
 	}
 }
 

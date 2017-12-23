@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 
 	ThreadPool<std::string> tPool;
 	
-	std::future<void> computing = std::async(std::launch::async, [&]() {
+	std::thread computing = std::thread([&]() {
 		uint64_t curValue;
 		PrimeFactors PF("primes.txt");
 		tPool.Start(tPoolSize);
@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			}
-			tPool.AddTask([&]() {
+			tPool.AddTask([=]() {
 				return PrimeFactors(curValue).ToString();
 			});
 
@@ -78,6 +78,8 @@ int main(int argc, char* argv[])
 			fout.open(argv[2], std::ofstream::app);
 		}
 	}
+
+	computing.join();
 
 	return 0;
 }
