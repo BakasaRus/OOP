@@ -18,8 +18,8 @@
 	+	Movement constructor
 	+	Movement operator
 	Part 3.
-		Emplace
-		EmplaceBack
+	+	Emplace
+	+	EmplaceBack
 	Part 4.
 		Thread sync method as template parameter
 	Part 5.
@@ -45,6 +45,8 @@ public:
 
 	template<class ... Args>
 	void Emplace(size_t, Args&&...);
+	template<class ... Args>
+	void EmplaceBack(Args&&...);
 
 	size_t Size() const;
 
@@ -210,9 +212,18 @@ template<class ... Args>
 void Vector<T>::Emplace(size_t position, Args&&... arguments)
 {
 	Reserve(size + 1);
-	memmove_s(data[position + 1], sizeof(T) * (size - position), data[position], sizeof(T) * (size - position));
+	memmove_s(&data[position + 1], sizeof(T) * (size - position), &data[position], sizeof(T) * (size - position));
 	size++;
-	data[position] = T(arguments);
+	data[position] = T(arguments...);
+}
+
+template<class T>
+template<class ... Args>
+void Vector<T>::EmplaceBack(Args&&... arguments)
+{
+	Reserve(size + 1);
+	data[size] = T(arguments...);
+	size++;
 }
 
 #pragma endregion
